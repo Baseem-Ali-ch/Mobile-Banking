@@ -42,9 +42,9 @@ export function AdminBottomNav() {
   const pathname = usePathname()
 
   return (
-    <div className="fixed bottom-0 left-0 z-50 w-full border-t bg-background md:hidden">
-      <div className="mx-auto flex h-16 max-w-md items-center justify-around">
-        {navItems.map((item) => {
+    <div className="fixed bottom-0 left-0 z-50 w-full border-t bg-background">
+      <div className="mx-auto flex h-16 items-center justify-around">
+      {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href === "/admin/dashboard" && pathname === "/admin") ||

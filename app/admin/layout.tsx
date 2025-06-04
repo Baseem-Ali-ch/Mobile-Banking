@@ -9,8 +9,7 @@ export default function AdminLayout({
 }) {
   return (
     <div className="min-h-screen bg-background">
-      <AdminSidebar />
-      <main className="ml-0 pb-16 md:ml-64 md:pb-0">
+      <main className="pb-16">
         <div className="container mx-auto p-4 md:p-6">{children}</div>
       </main>
       <AdminBottomNav />

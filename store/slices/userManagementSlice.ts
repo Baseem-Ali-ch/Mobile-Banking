@@ -90,6 +90,7 @@ interface UserManagementState {
   isDetailPanelOpen: boolean
   isAddUserDialogOpen: boolean
   isBulkActionDialogOpen: boolean
+  isBulkUpdating: boolean
   bulkAction: string
   sortConfig: {
     key: string
@@ -139,6 +140,7 @@ const initialState: UserManagementState = {
   isDetailPanelOpen: false,
   isAddUserDialogOpen: false,
   isBulkActionDialogOpen: false,
+  isBulkUpdating: false,
   bulkAction: "",
   sortConfig: null,
 }
@@ -170,10 +172,10 @@ export const fetchUserNotes = createAsyncThunk("userManagement/fetchUserNotes", 
   return response
 })
 
-export const updateUserStatus = createAsyncThunk(
-  "userManagement/updateUserStatus",
-  async ({ userId, status, reason }: { userId: string; status: UserStatus; reason?: string }) => {
-    const response = await adminApi.updateUserStatus(userId, status, reason)
+export const toggleUserPortalAccess = createAsyncThunk(
+  "userManagement/toggleUserPortalAccess",
+  async ({ userId, isPortalAccess }: { userId: string; isPortalAccess: boolean }) => {
+    const response = await adminApi.updateUserPortalAccess(userId, isPortalAccess)
     return response
   },
 )
@@ -236,6 +238,14 @@ export const exportUsers = createAsyncThunk(
     return response
   },
 )
+
+export const bulkToggleUserPortalAccess = createAsyncThunk(
+  'userManagement/bulkToggleUserPortalAccess',
+  async ({ userIds, isPortalAccess }: { userIds: string[]; isPortalAccess: boolean }) => {
+    const response = await adminApi.bulkUpdateUserPortalAccess(userIds, isPortalAccess);
+    return response; 
+  },
+);
 
 const userManagementSlice = createSlice({
   name: "userManagement",
@@ -382,13 +392,50 @@ const userManagementSlice = createSlice({
       })
 
     // Update User Status
-    builder.addCase(updateUserStatus.fulfilled, (state, action) => {
-      const index = state.users.items.findIndex((user) => user.id === action.payload.id)
-      if (index !== -1) {
-        state.users.items[index] = action.payload
-        applyFilters(state)
+    builder.addCase(toggleUserPortalAccess.fulfilled, (state, action) => {
+      // action.payload is the result object from the API response
+      const updatedUser = action.payload.data.user;
+      if (updatedUser && updatedUser.id) { 
+        const index = state.users.items.findIndex((user) => user.id === updatedUser.id);
+        if (index !== -1) {
+          state.users.items[index] = { ...state.users.items[index], ...updatedUser };
+          applyFilters(state);
+        }
+      } else {
+        console.error('toggleUserPortalAccess.fulfilled: updatedUser object or updatedUser.id is missing in action.payload.data.user', action.payload);
       }
     })
+
+    // Bulk Toggle User Portal Access
+    builder.addCase(bulkToggleUserPortalAccess.pending, (state) => {
+      state.isBulkUpdating = true;
+      state.error = null; // Clear previous errors
+    });
+    builder.addCase(bulkToggleUserPortalAccess.fulfilled, (state, action) => {
+      state.isBulkUpdating = false;
+      // action.payload is BulkPortalAccessResponse
+      const { updatedUsers, errors } = action.payload.data;
+      if (errors) {
+        // Handle or log errors if necessary, e.g., show a notification
+        console.error('Bulk portal access update encountered errors:', errors);
+        // Potentially set an error state here for the UI to pick up
+        state.error = "Bulk update encountered errors."; // Example error handling
+      }
+      if (updatedUsers && updatedUsers.length > 0) {
+        updatedUsers.forEach(updatedUser => {
+          const index = state.users.items.findIndex(user => user.id === updatedUser.id);
+          if (index !== -1) {
+            state.users.items[index] = { ...state.users.items[index], ...updatedUser };
+          }
+        });
+        applyFilters(state); // Re-apply filters if the list has changed
+      }
+      // Optionally, update loading/status states here
+    });
+    builder.addCase(bulkToggleUserPortalAccess.rejected, (state, action) => {
+      state.isBulkUpdating = false;
+      state.error = action.error.message || 'Bulk portal access update failed.';
+    });
 
     // Update User Note
     builder.addCase(updateUserNote.fulfilled, (state, action) => {

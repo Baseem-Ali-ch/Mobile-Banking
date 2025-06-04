@@ -1,5 +1,5 @@
 import { api } from "./client"
-import type { Transaction, User } from "@/types"
+import type { Transaction, User, UserStatus } from "@/types"
 import type { TransactionFilter } from "@/store/slices/adminTransactionsSlice"
 import type { TransactionWorkflow, AuditLogEntry } from "@/store/slices/settingsSlice"
 
@@ -295,6 +295,25 @@ interface UserResponse {
       pages: number
     }
   }
+}
+
+interface PortalUpdateResponse {
+  status: string
+  message: string
+  data: {
+    user: User
+  }
+}
+
+export interface BulkPortalAccessResponse {
+  status: string;
+  message: string;
+  data: {
+    updatedUsers: User[];
+    totalUpdated: number;
+    totalRequested: number;
+    errors: any;
+  };
 }
 
 export const adminApi = {
@@ -609,6 +628,16 @@ export const adminApi = {
       ...(role && { role })
     })
     return api.get(`https://aq-pay.mcodevbytes.in/api/auth/users?${queryParams.toString()}`)
+  },
+
+  updateUserPortalAccess: async (userId: string, isPortalAccess: boolean): Promise<PortalUpdateResponse> => {
+    const response = await api.put(`https://aq-pay.mcodevbytes.in/api/auth/users/${userId}/portal-access`, { isPortalAccess })
+    return response
+  },
+
+  async bulkUpdateUserPortalAccess(userIds: string[], isPortalAccess: boolean): Promise<BulkPortalAccessResponse> {
+    const response = await api.post<{ data: BulkPortalAccessResponse }>('https://aq-pay.mcodevbytes.in/api/auth/bulk-approve-portal-access', { userIds, isPortalAccess });
+    return response.data;
   },
 
   // New transaction management methods
