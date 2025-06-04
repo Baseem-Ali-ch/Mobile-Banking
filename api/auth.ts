@@ -24,22 +24,27 @@ interface ResetPasswordResponse {
   message: string;
 }
 
+interface LogoutResponse {
+  status: string;
+  message: string;
+}
+
 export const authApi = {
   login: (credentials: {
     email: string;
     password: string;
   }): Promise<LoginResponse> => {
-    return api.post("https://aq-pay.mcodevbytes.in/api/auth/login", credentials);
+    return api.post("/auth/login", credentials);
   },
 
   register: (userData: RegistrationData): Promise<RegisterResponse> => {
     return api.post(
-      "https://aq-pay.mcodevbytes.in/api/auth/register",
+      "/auth/register",
       userData
     );
   },
 
-  logout: (): Promise<void> => {
+  logout: (): Promise<LogoutResponse> => {
     return api.post("/auth/logout");
   },
 

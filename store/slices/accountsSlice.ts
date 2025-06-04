@@ -23,8 +23,8 @@ export const fetchAccounts = createAsyncThunk("accounts/fetchAccounts", async (_
   try {
     const response = await accountsApi.getAccounts()
     return response
-  } catch (error) {
-    return rejectWithValue("Failed to fetch accounts")
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Failed to fetch accounts")
   }
 })
 
@@ -32,8 +32,8 @@ export const fetchAccount = createAsyncThunk("accounts/fetchAccount", async (id:
   try {
     const response = await accountsApi.getAccount(id)
     return response
-  } catch (error) {
-    return rejectWithValue("Failed to fetch account details")
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Failed to fetch account details")
   }
 })
 
@@ -55,15 +55,15 @@ export const addAccount = createAsyncThunk(
     try {
       const response = await accountsApi.addAccount(accountData)
       return response
-    } catch (error) {
-      return rejectWithValue("Failed to add account")
+    } catch (error: any) {
+      return rejectWithValue(error.message || "Failed to add account")
     }
   },
 )
 
 export const updateAccount = createAsyncThunk(
   "accounts/updateAccount",
-  async ({ id, data }: { id: string; data: Partial<BankAccount> }, { rejectWithValue }) => {
+  async ({ id, ...data }: { id: string } & Partial<BankAccount>, { rejectWithValue }) => {
     try {
       const response = await accountsApi.updateAccount(id, data)
       return response
@@ -88,8 +88,8 @@ export const setDefaultAccount = createAsyncThunk(
     try {
       const response = await accountsApi.setDefaultAccount(id)
       return response
-    } catch (error) {
-      return rejectWithValue("Failed to set default account")
+    } catch (error: any) {
+      return rejectWithValue(error.message ||"Failed to set default account")
     }
   },
 )
@@ -118,8 +118,12 @@ const accountsSlice = createSlice({
       state.error = null
     })
     builder.addCase(fetchAccounts.fulfilled, (state, action) => {
-      state.isLoading = false
-      state.accounts = action.payload
+      const accounts = Array.isArray(action.payload.data.accounts) 
+        ? action.payload.data.accounts
+        : [action.payload.data.accounts];
+      state.accounts = accounts;
+      state.isLoading = false;
+      state.error = null;
     })
     builder.addCase(fetchAccounts.rejected, (state, action) => {
       state.isLoading = false
@@ -133,7 +137,7 @@ const accountsSlice = createSlice({
     })
     builder.addCase(fetchAccount.fulfilled, (state, action) => {
       state.isLoading = false
-      state.selectedAccount = action.payload
+      state.selectedAccount = action.payload.data.account
     })
     builder.addCase(fetchAccount.rejected, (state, action) => {
       state.isLoading = false
@@ -161,12 +165,12 @@ const accountsSlice = createSlice({
     })
     builder.addCase(addAccount.fulfilled, (state, action) => {
       state.isLoading = false
-      state.accounts.push(action.payload)
+      state.accounts.push(action.payload.data.accounts)
 
       // If this is the first account or it's set as default, update other accounts
-      if (action.payload.isDefault) {
+      if (action.payload.data.accounts.isDefault) {
         state.accounts = state.accounts.map((account) =>
-          account.id !== action.payload.id ? { ...account, isDefault: false } : account,
+          account.id !== action.payload.data.accounts.id ? { ...account, isDefault: false } : account,
         )
       }
     })

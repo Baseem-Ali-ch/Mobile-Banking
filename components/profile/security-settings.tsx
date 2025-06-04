@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Eye, EyeOff, Loader2, LogOut, Smartphone } from "lucide-react"
+import { ArrowLeft, Eye, EyeOff, Loader2, LogOut, Smartphone } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { PasswordStrengthIndicator } from "@/components/auth/password-strength-indicator"
 
@@ -256,6 +256,17 @@ export function SecuritySettings() {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-2 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-0 h-8 w-8 border border-gray"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl sm:text-2xl font-bold">Security Settings</h1>
+      </div>
       <Tabs defaultValue="password" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="password">Password</TabsTrigger>

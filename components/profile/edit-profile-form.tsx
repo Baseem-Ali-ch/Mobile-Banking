@@ -16,8 +16,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
-import { Loader2, Upload } from "lucide-react"
+import { ArrowLeft, Loader2, Upload } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { useAlert } from "../ui/alert-component";
 
 const profileFormSchema = z.object({
   firstName: z.string().min(2, {
@@ -32,17 +33,12 @@ const profileFormSchema = z.object({
   phoneNumber: z.string().min(10, {
     message: "Phone number must be at least 10 characters.",
   }),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zipCode: z.string().optional(),
-  country: z.string().optional(),
-  dateOfBirth: z.string().optional(),
 })
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 export function EditProfileForm() {
+  const { showAlert } = useAlert()
   const router = useRouter()
   const dispatch = useAppDispatch()
   const { user, isLoading, isUpdating } = useAppSelector((state) => state.profile)
@@ -60,12 +56,6 @@ export function EditProfileForm() {
       lastName: "",
       email: "",
       phoneNumber: "",
-      address: "",
-      city: "",
-      state: "",
-      zipCode: "",
-      country: "",
-      dateOfBirth: "",
     },
   })
 
@@ -76,12 +66,6 @@ export function EditProfileForm() {
         lastName: user.lastName || "",
         email: user.email || "",
         phoneNumber: user.phoneNumber || "",
-        address: user.address || "",
-        city: user.city || "",
-        state: user.state || "",
-        zipCode: user.zipCode || "",
-        country: user.country || "",
-        dateOfBirth: user.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split("T")[0] : "",
       })
       setProfileImagePreview(user.profileImage || null)
     }
@@ -110,19 +94,20 @@ export function EditProfileForm() {
         formData.append("profileImage", profileImage)
       }
 
-      await dispatch(updateUserProfile(formData)).unwrap()
+      const result = await dispatch(updateUserProfile(formData)).unwrap()
 
-      toast({
+      showAlert({
+        type: 'success',
         title: "Profile updated",
-        description: "Your profile information has been updated successfully.",
+        description: result.message || "Your profile information has been updated successfully.",
       })
 
       router.push("/dashboard/profile")
-    } catch (error) {
-      toast({
-        variant: "destructive",
+    } catch (error: Error | any) {
+      showAlert({
+        type: 'error',
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: error.message || "Failed to update profile. Please try again.",
       })
     }
   }
@@ -134,7 +119,17 @@ export function EditProfileForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Edit Profile</CardTitle>
+        <CardTitle> <div className="flex items-center gap-2 mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="p-0 h-8 w-8 border border-gray "
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl sm:text-2xl font-bold">Edit Profile</h1>
+        </div></CardTitle>
         <CardDescription>Update your personal information and contact details.</CardDescription>
       </CardHeader>
       <Form {...form}>
@@ -225,103 +220,7 @@ export function EditProfileForm() {
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="dateOfBirth"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date of Birth</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123 Main St" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>City</FormLabel>
-                    <FormControl>
-                      <Input placeholder="New York" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="NY" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="zipCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Zip Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="10001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="country"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Country</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a country" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="US">United States</SelectItem>
-                      <SelectItem value="CA">Canada</SelectItem>
-                      <SelectItem value="UK">United Kingdom</SelectItem>
-                      <SelectItem value="AU">Australia</SelectItem>
-                      <SelectItem value="DE">Germany</SelectItem>
-                      <SelectItem value="FR">France</SelectItem>
-                      <SelectItem value="JP">Japan</SelectItem>
-                      <SelectItem value="IN">India</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button type="button" variant="outline" onClick={() => router.push("/dashboard/profile")}>

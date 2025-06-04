@@ -1,3 +1,6 @@
+import { User } from "@/types"
+import { api } from "./client"
+
 // Mock data for development
 const mockUser = {
   id: "user123",
@@ -43,33 +46,20 @@ const mockUser = {
 }
 
 export const profileApi = {
-  getUserProfile: async () => {
+  getUserProfile: async (): Promise<User> => {
     try {
-      // In a real app, this would be an API call
-      // const response = await apiClient.get('/profile')
-      // return response.data
-
-      // For development, return mock data
-      return mockUser
+      const response = await api.get(`/auth/profile`)
+      return response.data.user
     } catch (error) {
       console.error("Error fetching user profile:", error)
       throw error
     }
   },
 
-  updateUserProfile: async (userData: FormData) => {
+  updateUserProfile: async (userData: FormData): Promise<User> => {
     try {
-      // In a real app, this would be an API call
-      // const response = await apiClient.put('/profile', userData)
-      // return response.data
-
-      // For development, return mock data with updates
-      return {
-        ...mockUser,
-        firstName: (userData.get("firstName") as string) || mockUser.firstName,
-        lastName: (userData.get("lastName") as string) || mockUser.lastName,
-        // Add other fields as needed
-      }
+      const response = await api.put(`/auth/profile`, userData)
+      return response.data
     } catch (error) {
       console.error("Error updating user profile:", error)
       throw error

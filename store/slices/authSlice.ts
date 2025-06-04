@@ -47,10 +47,7 @@ export const loginAsync = createAsyncThunk(
       const response = await authApi.login(credentials);
       return response;
     } catch (error: any) {
-      if (error.response?.data?.status === "error") {
-        return rejectWithValue(error.response.data.message);
-      }
-      return rejectWithValue("Invalid username or password");
+      return rejectWithValue(error.response.data.message);
     }
   }
 );
@@ -76,8 +73,8 @@ export const logoutAsync = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      await authApi.logout();
-      return null;
+      const response = await authApi.logout();
+      return response;
     } catch (error) {
       return rejectWithValue("Logout failed");
     }

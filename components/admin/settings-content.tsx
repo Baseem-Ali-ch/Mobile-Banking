@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useAppDispatch } from "@/store/hooks"
-import { logout } from "@/store/slices/authSlice"
+import { logout, logoutAsync } from "@/store/slices/authSlice"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,26 +11,34 @@ import { RolesPermissionsSettings } from "@/components/admin/settings/roles-perm
 import { TransactionWorkflowSettings } from "@/components/admin/settings/transaction-workflow-settings"
 import { AuditTrailSettings } from "@/components/admin/settings/audit-trail-settings"
 import { LogOut } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
+import { useAlert } from "@/components/ui/alert-component"
+import Cookies from "js-cookie"
 
 export function SettingsContent() {
   const router = useRouter()
+  const { showAlert } = useAlert();
   const dispatch = useAppDispatch()
   const [activeTab, setActiveTab] = useState("roles")
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      dispatch(logout())
-      toast({
+      const result = await dispatch(logoutAsync()).unwrap()
+      if (result.status === "success") {
+        const token = Cookies.remove("auth_token")
+        const role = Cookies.remove("auth_role")
+        dispatch(logout())
+      }
+      showAlert({
+        type: 'success',
         title: "Logged out successfully",
-        description: "You have been logged out of your account.",
+        description: result.message || "You have been logged out of your account.",
       })
       router.push("/auth/login")
-    } catch (error) {
-      toast({
-        variant: "destructive",
+    } catch (error: Error | any) {
+      showAlert({
+        type: "error",
         title: "Error",
-        description: "Failed to log out. Please try again.",
+        description: error.message || "Failed to log out. Please try again.",
       })
     }
   }

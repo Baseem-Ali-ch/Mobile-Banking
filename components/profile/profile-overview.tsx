@@ -6,17 +6,19 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks"
 import { fetchUserProfile } from "@/store/slices/profileSlice"
 import { fetchAccounts } from "@/store/slices/accountsSlice"
 import { fetchTransactions } from "@/store/slices/transactionsSlice"
-import { logout } from "@/store/slices/authSlice"
+import { logout, logoutAsync } from "@/store/slices/authSlice"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Edit, Lock, LogOut, Settings, Shield, Wallet } from "lucide-react"
-import { toast } from "@/components/ui/use-toast"
+import { useAlert } from "@/components/ui/alert-component"
+import Cookies from "js-cookie"
 
 export function ProfileOverview() {
   const router = useRouter()
+  const { showAlert } = useAlert();
   const dispatch = useAppDispatch()
   const { user, isLoading } = useAppSelector((state) => state.profile || { user: null, isLoading: true })
   const { accounts } = useAppSelector((state) => state.accounts)
@@ -24,6 +26,7 @@ export function ProfileOverview() {
   const { wallet } = useAppSelector((state) => state.wallet)
 
   useEffect(() => {
+    
     dispatch(fetchUserProfile())
     dispatch(fetchAccounts())
     dispatch(fetchTransactions())
@@ -38,12 +41,6 @@ export function ProfileOverview() {
       "lastName",
       "email",
       "phoneNumber",
-      "address",
-      "city",
-      "state",
-      "zipCode",
-      "country",
-      "dateOfBirth",
     ]
 
     const completedFields = requiredFields.filter((field) => !!user[field as keyof typeof user])
@@ -73,19 +70,26 @@ export function ProfileOverview() {
     }).format(date)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     try {
-      dispatch(logout())
-      toast({
+      const result = await dispatch(logoutAsync()).unwrap()
+
+      if (result.status === 'success') {
+        const token = Cookies.remove("auth_token")
+        const role = Cookies.remove("auth_role")
+      }
+
+      showAlert({
+        type: "success",
         title: "Logged out successfully",
-        description: "You have been logged out of your account.",
+        description: result.message || "You have been logged out of your account.",
       })
       router.push("/auth/login")
-    } catch (error) {
-      toast({
-        variant: "destructive",
+    } catch (error: Error | any) {
+      showAlert({
+        type: "error",
         title: "Error",
-        description: "Failed to log out. Please try again.",
+        description: error.message || "Failed to log out. Please try again.",
       })
     }
   }

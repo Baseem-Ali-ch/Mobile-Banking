@@ -627,16 +627,16 @@ export const adminApi = {
       limit: limit.toString(),
       ...(role && { role })
     })
-    return api.get(`https://aq-pay.mcodevbytes.in/api/auth/users?${queryParams.toString()}`)
+    return api.get(`/auth/users?${queryParams.toString()}`)
   },
 
   updateUserPortalAccess: async (userId: string, isPortalAccess: boolean): Promise<PortalUpdateResponse> => {
-    const response = await api.put(`https://aq-pay.mcodevbytes.in/api/auth/users/${userId}/portal-access`, { isPortalAccess })
+    const response = await api.put(`/auth/users/${userId}/portal-access`, { isPortalAccess })
     return response
   },
 
   async bulkUpdateUserPortalAccess(userIds: string[], isPortalAccess: boolean): Promise<BulkPortalAccessResponse> {
-    const response = await api.post<{ data: BulkPortalAccessResponse }>('https://aq-pay.mcodevbytes.in/api/auth/bulk-approve-portal-access', { userIds, isPortalAccess });
+    const response = await api.post<{ data: BulkPortalAccessResponse }>(`/auth/bulk-approve-portal-access`, { userIds, isPortalAccess });
     return response.data;
   },
 

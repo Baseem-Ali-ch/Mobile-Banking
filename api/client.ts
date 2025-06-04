@@ -5,7 +5,7 @@ import { setLoading } from "@/store/slices/uiSlice"
 import Cookies from "js-cookie"
 
 // Base API URL
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.moneymanager.com"
+const API_URL = process.env.NEXT_PUBLIC_API_URL
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({

@@ -1,16 +1,16 @@
 import type React from "react"
 import { BottomNav } from "@/components/navigation/bottom-nav"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 import { WalletNotifications } from "@/components/wallet/wallet-notifications"
+import { cookies } from "next/headers"
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const cookieStore = cookies()
-  const token = cookieStore.get("auth_token")
+  const cookieStore = await cookies()
+  const token = cookieStore.get("auth_token")?.value
 
   if (!token) {
     redirect("/auth/login")

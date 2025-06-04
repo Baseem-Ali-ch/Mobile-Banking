@@ -10,8 +10,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { AlertCircle, CheckCircle2, Clock, FileText, Loader2, Upload, UserCheck, X } from "lucide-react"
+import { AlertCircle, ArrowLeft, CheckCircle2, Clock, FileText, Loader2, Upload, UserCheck, X } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 type VerificationStatus = "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED"
 type DocumentType = "ID_PROOF" | "ADDRESS_PROOF" | "SELFIE"
@@ -28,6 +29,7 @@ interface VerificationDocument {
 
 export function IdentityVerification() {
   const dispatch = useAppDispatch()
+  const router = useRouter()
   const { isLoading } = useAppSelector((state) => state.profile)
   const [uploading, setUploading] = useState<DocumentType | null>(null)
 
@@ -180,7 +182,19 @@ export function IdentityVerification() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Identity Verification Status</CardTitle>
+          <CardTitle>
+          <div className="flex items-center gap-2 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-0 h-8 w-8 border border-gray"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <h1 className="text-xl sm:text-2xl font-bold">Identity Verification Status</h1>
+      </div>
+          </CardTitle>
           <CardDescription>Complete the verification process to unlock all features.</CardDescription>
         </CardHeader>
         <CardContent>

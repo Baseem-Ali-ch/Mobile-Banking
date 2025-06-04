@@ -673,7 +673,7 @@ export function UserManagement() {
                             </TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                              {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                              {user.createdAt ? (isNaN(new Date(user.createdAt).getTime()) ? 'Invalid Date' : formatDate(user.createdAt)) : "N/A"}
                             </TableCell>
                             <TableCell className="hidden lg:table-cell">
                               <StatusBadge status={user.isPortalAccess ? UserStatus.ACTIVE : UserStatus.INACTIVE} />
@@ -825,7 +825,7 @@ export function UserManagement() {
                           </div>
                           <div>
                             <span className="font-medium">Registered:</span>{" "}
-                            {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                            {user.createdAt ? (isNaN(new Date(user.createdAt).getTime()) ? 'Invalid Date' : formatDate(user.createdAt)) : "N/A"}
                           </div>
                           <div>
                             <span className="font-medium">Status:</span>{" "}
@@ -995,7 +995,7 @@ export function UserManagement() {
                             </TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                              {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                              {user.createdAt ? (isNaN(new Date(user.createdAt).getTime()) ? 'Invalid Date' : formatDate(user.createdAt)) : "N/A"}
                             </TableCell>
                             <TableCell>
                               <div className="flex justify-end gap-2">
@@ -1128,7 +1128,7 @@ export function UserManagement() {
                           </div>
                           <div>
                             <span className="font-medium">Registered:</span>{" "}
-                            {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                            {user.createdAt ? (isNaN(new Date(user.createdAt).getTime()) ? 'Invalid Date' : formatDate(user.createdAt)) : "N/A"}
                           </div>
                         </div>
                       </CardContent>
@@ -1246,7 +1246,7 @@ export function UserManagement() {
                             </TableCell>
                             <TableCell>{user.email}</TableCell>
                             <TableCell className="hidden md:table-cell">
-                              {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                              {user.createdAt ? (isNaN(new Date(user.createdAt).getTime()) ? 'Invalid Date' : formatDate(user.createdAt)) : "N/A"}
                             </TableCell>
                             <TableCell>
                               <div className="flex justify-end gap-2">
@@ -1379,7 +1379,7 @@ export function UserManagement() {
                           </div>
                           <div>
                             <span className="font-medium">Registered:</span>{" "}
-                            {user.createdAt ? formatDate(user.createdAt) : "N/A"}
+                            {user.createdAt ? (isNaN(new Date(user.createdAt).getTime()) ? 'Invalid Date' : formatDate(user.createdAt)) : "N/A"}
                           </div>
                         </div>
                       </CardContent>
@@ -1420,10 +1420,10 @@ export function UserManagement() {
                       <span className="font-medium">Phone:</span> {selectedUser.phoneNumber}
                     </div>
                     <div>
-                      <span className="font-medium">Status:</span> <StatusBadge status={selectedUser.status} />
+                      <span className="font-medium">Status:</span> <StatusBadge status={selectedUser.isPortalAccess ? UserStatus.ACTIVE : UserStatus.INACTIVE} />
                     </div>
                     <div>
-                      <span className="font-medium">Registration Date:</span> {formatDate(selectedUser.createdAt)}
+                      <span className="font-medium">Registration Date:</span> {selectedUser.createdAt ? (isNaN(new Date(selectedUser.createdAt).getTime()) ? 'Invalid Date' : formatDate(selectedUser.createdAt)) : "N/A"}
                     </div>
                     <div>
                       <span className="font-medium">Last Login:</span> {formatDate(selectedUser.lastLogin)}

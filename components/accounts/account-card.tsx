@@ -15,29 +15,20 @@ interface AccountCardProps {
 }
 
 export function AccountCard({ account, onClick }: AccountCardProps) {
-  const [isShareOpen, setIsShareOpen] = useState(false)
 
   const formatAccountNumber = (accountNumber: string) => {
     // Show only last 4 digits
     return `•••• •••• •••• ${accountNumber.slice(-4)}`
   }
 
-  const handleShare = (method: string) => {
-    // In a real app, this would integrate with the Web Share API or native sharing
-    toast({
-      title: `Shared via ${method}`,
-      description: `Account details have been shared via ${method}`,
-    })
-    setIsShareOpen(false)
+  const formatIfsc = (ifsc: string) => {
+    // Show only last 3 digits
+    return `•••• •••• ${ifsc.slice(-3)}`
   }
 
-  // Prevent event bubbling when clicking the share button
-  const handleShareClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-  }
 
   // Generate a gradient based on the bank name for visual variety
-  const getCardGradient = (bankName: string) => {
+  const getCardGradient = () => {
     const gradients = [
       "bg-gradient-to-r from-blue-600 to-blue-400",
       "bg-gradient-to-r from-purple-600 to-purple-400",
@@ -47,15 +38,15 @@ export function AccountCard({ account, onClick }: AccountCardProps) {
     ]
 
     // Use a hash of the bank name to select a consistent gradient
-    const hash = bankName.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    return gradients[hash % gradients.length]
+    const randomIndex = Math.floor(Math.random() * gradients.length)
+    return gradients[randomIndex]
   }
 
   return (
     <div
       className={cn(
         "relative rounded-xl overflow-hidden shadow-lg transition-all hover:shadow-xl",
-        getCardGradient(account.bankName),
+        getCardGradient(),
         onClick && "cursor-pointer",
       )}
       onClick={onClick}
@@ -63,21 +54,9 @@ export function AccountCard({ account, onClick }: AccountCardProps) {
       <div className="p-6 text-white">
         <div className="flex justify-between items-start">
           <div>
-            <p className="text-sm opacity-80">{account.bankName}</p>
-            <h3 className="font-bold text-lg mt-1">{account.accountName}</h3>
+            <h3 className="font-bold text-lg mt-1">{account.accountHolderName}</h3>
+            <p className="text-sm opacity-80">{formatIfsc(account.ifscCode)}</p>
           </div>
-          <DropdownMenu open={isShareOpen} onOpenChange={setIsShareOpen}>
-            <DropdownMenuTrigger asChild onClick={handleShareClick}>
-              <button className="p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
-                <Share2 className="h-4 w-4 text-white" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleShare("Email")}>Email</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleShare("SMS")}>SMS</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleShare("Copy Link")}>Copy Link</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
 
         <div className="mt-6">

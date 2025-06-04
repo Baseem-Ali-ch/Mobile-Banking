@@ -1,4 +1,5 @@
 import type { BankAccount, Transaction } from "@/types"
+import { api } from "./client"
 
 // Mock data for demo purposes
 const mockAccounts: BankAccount[] = [
@@ -114,84 +115,49 @@ const mockTransactions: Record<string, Transaction[]> = {
   ],
 }
 
-// Helper function to simulate API delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+interface AccountResponse {
+  status: 'success'
+  message: string
+  data: {
+    accounts: {
+      id: string
+      accountHolderName: string
+      accountNumber: string
+      ifscCode: string
+      userId: string
+      isDefault?: boolean
+      createdAt: string
+      updatedAt: string
+      user: {
+        id: string
+        email: string
+        firstName: string
+        lastName: string
+      }
+    }
+  }
+}
 
 export const accountsApi = {
-  getAccounts: async (): Promise<BankAccount[]> => {
-    // In a real app, this would be an API call
-    // For demo purposes, we'll use mock data with a delay
-    await delay(1000)
-    return [...mockAccounts]
+
+  getAccounts: async (): Promise<AccountResponse> => {
+    const response = await api.get('/accounts')
+    return response
   },
 
-  getAccount: async (id: string): Promise<BankAccount> => {
-    await delay(800)
-    const account = mockAccounts.find((acc) => acc.id === id)
-    if (!account) {
-      throw new Error("Account not found")
-    }
-    return { ...account }
+  getAccount: async (id: string): Promise<AccountResponse> => {
+    const response = await api.get(`/accounts/${id}`)
+    return response
   },
 
-  addAccount: async (accountData: Partial<BankAccount>): Promise<BankAccount> => {
-    await delay(1200)
-
-    // Generate a new ID
-    const newId = `acc_${Date.now()}`
-
-    // Create new account
-    const newAccount: BankAccount = {
-      id: newId,
-      userId: accountData.userId || "1",
-      accountNumber: accountData.accountNumber || "",
-      accountName: accountData.accountName || "",
-      accountType: accountData.accountType || "CHECKING",
-      bankName: accountData.bankName || "",
-      routingNumber: accountData.routingNumber || "",
-      branchName: accountData.branchName || "",
-      balance: 0, // New accounts start with zero balance
-      currency: "USD",
-      isDefault: accountData.isDefault || false,
-      status: "ACTIVE",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-
-    // If this is the first account or it's set as default, update other accounts
-    if (newAccount.isDefault) {
-      mockAccounts.forEach((acc) => {
-        acc.isDefault = false
-      })
-    }
-
-    // Add to mock data
-    mockAccounts.push(newAccount)
-
-    // Initialize empty transactions for this account
-    mockTransactions[newId] = []
-
-    return newAccount
+  addAccount: async (accountData: Partial<BankAccount>): Promise<AccountResponse> => {
+    const response = await api.post('/accounts', accountData)
+    return response
   },
 
   updateAccount: async (id: string, accountData: Partial<BankAccount>): Promise<BankAccount> => {
-    await delay(1000)
-
-    const accountIndex = mockAccounts.findIndex((acc) => acc.id === id)
-    if (accountIndex === -1) {
-      throw new Error("Account not found")
-    }
-
-    // Update account
-    const updatedAccount = {
-      ...mockAccounts[accountIndex],
-      ...accountData,
-      updatedAt: new Date().toISOString(),
-    }
-
-    mockAccounts[accountIndex] = updatedAccount
-
-    return updatedAccount
+    const response = await api.put(`/accounts/${id}`, accountData)
+    return response
   },
 
   deleteAccount: async (id: string): Promise<void> => {
@@ -210,22 +176,8 @@ export const accountsApi = {
   },
 
   setDefaultAccount: async (id: string): Promise<BankAccount> => {
-    await delay(800)
-
-    const accountIndex = mockAccounts.findIndex((acc) => acc.id === id)
-    if (accountIndex === -1) {
-      throw new Error("Account not found")
-    }
-
-    // Set all accounts to non-default
-    mockAccounts.forEach((acc) => {
-      acc.isDefault = false
-    })
-
-    // Set the specified account as default
-    mockAccounts[accountIndex].isDefault = true
-
-    return { ...mockAccounts[accountIndex] }
+    const response = await api.put(`/accounts/${id}`)
+    return response
   },
 
   getAccountBalance: async (id: string): Promise<{ balance: number }> => {

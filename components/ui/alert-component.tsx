@@ -163,12 +163,17 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         <AlertContext.Provider value={{ showAlert }}>
             {children}
             {/* Render alerts */}
-            <div className="fixed top-0 right-0 z-50 p-4 space-y-4 pointer-events-none">
+            <div className="fixed top-4 right-4 z-50 w-80 max-w-sm space-y-4">
                 {alerts.map((alert, index) => (
                     <div
                         key={alert.id}
                         className="pointer-events-auto"
-                        style={{ transform: `translateY(${index * 10}px)` }}
+                        style={{
+                            transform: `translateY(${index * 10}px)`,
+                            transition: 'transform 0.3s ease-in-out',
+                            opacity: 1,
+                            animation: 'slideIn 0.3s ease-out'
+                        }}
                     >
                         <AlertComponent alert={alert} onClose={removeAlert} />
                     </div>
@@ -177,3 +182,26 @@ export const AlertProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         </AlertContext.Provider>
     );
 };
+
+// Add CSS animation
+const AlertProviderWithStyles = () => {
+    return (
+        <>
+            <style jsx global>{`
+                @keyframes slideIn {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+            `}</style>
+            <AlertProvider />
+        </>
+    );
+};
+
+export default AlertProviderWithStyles;

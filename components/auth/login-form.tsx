@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/components/ui/use-toast";
 import Cookies from 'js-cookie';
 import { useAlert } from "../ui/alert-component";
+import { Result } from "postcss";
 
 const loginSchema = z.object({
   email: z.string().email({
@@ -80,10 +81,6 @@ export function LoginForm() {
         }
 
         if (result.data.role === "ADMIN") {
-          // toast({
-          //   title: "Login successful",
-          //   description: "Welcome back to Admin Portal",
-          // });
 
           showAlert({
             type: 'success',
@@ -96,12 +93,21 @@ export function LoginForm() {
           }, 1500);
 
         } else if (result.data.role === "USER") {
+          
+          if (result.data.user.isPortalAccess) {
+            showAlert({
+              type: 'success',
+              title: "Login successful",
+              description: result.message || "Welcome back to MoneyManager",
+            });
+          } else {
+            showAlert({
+              type: 'error',
+              title: "Login failed",
+              description: result.message || "You are not allowed to access this portal",
+            });
+          }
 
-          showAlert({
-            type: 'success',
-            title: "Login successful",
-            description: "Welcome back to MoneyManager",
-          });
 
           setTimeout(() => {
             router.push("/dashboard");

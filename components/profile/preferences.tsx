@@ -9,11 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Loader2 } from "lucide-react"
+import { ArrowLeft, Loader2 } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
 
 export function Preferences() {
+  const router = useRouter()
   const dispatch = useAppDispatch()
   const { isUpdating } = useAppSelector((state) => state.profile)
   const { accounts } = useAppSelector((state) => state.accounts)
@@ -121,7 +123,19 @@ export function Preferences() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
+          <CardTitle>
+            <div className="flex items-center gap-2 mb-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-0 h-8 w-8 border border-gray"
+                onClick={() => router.back()}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl sm:text-2xl font-bold">Notification Preferences</h1>
+            </div>
+          </CardTitle>
           <CardDescription>Manage how and when you receive notifications.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

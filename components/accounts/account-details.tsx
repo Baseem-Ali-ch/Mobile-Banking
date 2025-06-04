@@ -15,6 +15,7 @@ import { AccountDetailsSkeleton } from "@/components/accounts/account-details-sk
 import { cn } from "@/lib/utils"
 import { TransactionStatus, TransactionType } from "@/types"
 import { formatCurrency } from "@/lib/currency-utils"
+import { useAlert } from "../ui/alert-component"
 
 interface AccountDetailsProps {
   id: string
@@ -22,6 +23,7 @@ interface AccountDetailsProps {
 
 export function AccountDetails({ id }: AccountDetailsProps) {
   const router = useRouter()
+  const {showAlert} = useAlert()
   const dispatch = useAppDispatch()
   const { selectedAccount, accountTransactions, isLoading, error } = useAppSelector((state) => state.accounts)
   const { currency } = useAppSelector((state) => state.settings)
@@ -91,10 +93,10 @@ export function AccountDetails({ id }: AccountDetailsProps) {
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <BankIcon bankName={selectedAccount.bankName} className="h-8 w-8" />
+                <BankIcon bankName={selectedAccount?.bankName || ""} className="h-8 w-8" />
                 <div>
-                  <CardTitle>{selectedAccount.accountName}</CardTitle>
-                  <CardDescription>{selectedAccount.bankName}</CardDescription>
+                  <CardTitle>{selectedAccount?.accountHolderName || ""}</CardTitle>
+                  <CardDescription>{"•••• " + selectedAccount?.ifscCode?.slice(-4)}</CardDescription>
                 </div>
               </div>
               {selectedAccount.isDefault && (
@@ -111,11 +113,7 @@ export function AccountDetails({ id }: AccountDetailsProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Account Number</p>
-                  <p className="font-medium">•••• {selectedAccount.accountNumber.slice(-4)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Account Type</p>
-                  <p className="font-medium">{selectedAccount.accountType}</p>
+                  <p className="font-medium">•••• •••• •••• {selectedAccount.accountNumber.slice(-4)}</p>
                 </div>
               </div>
 
@@ -127,17 +125,6 @@ export function AccountDetails({ id }: AccountDetailsProps) {
                 <div>
                   <p className="text-sm text-muted-foreground">IFSC Code</p>
                   <p className="font-medium font-mono">{selectedAccount.ifscCode || "N/A"}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Routing Number</p>
-                  <p className="font-medium">{selectedAccount.routingNumber ? selectedAccount.routingNumber : "N/A"}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Branch</p>
-                  <p className="font-medium">{selectedAccount.branchName || "N/A"}</p>
                 </div>
               </div>
             </div>
@@ -156,7 +143,8 @@ export function AccountDetails({ id }: AccountDetailsProps) {
                 className="flex-1"
                 onClick={() => {
                   // This would open a statement or detailed view
-                  toast({
+                  showAlert({
+                    type: 'info',
                     title: "Feature coming soon",
                     description: "Account statements will be available in a future update.",
                   })

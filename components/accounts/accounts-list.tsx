@@ -22,9 +22,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { BankAccount } from "@/types"
+import { useAlert } from "../ui/alert-component"
 
 export function AccountsList() {
   const router = useRouter()
+  const { showAlert } = useAlert()
   const dispatch = useAppDispatch()
   const { accounts, isLoading, error } = useAppSelector((state) => state.accounts)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -36,8 +39,8 @@ export function AccountsList() {
 
   useEffect(() => {
     if (error) {
-      toast({
-        variant: "destructive",
+      showAlert({
+        type: "error",
         title: "Error",
         description: error,
       })
@@ -47,7 +50,8 @@ export function AccountsList() {
   const handleRefresh = async () => {
     try {
       await dispatch(fetchAccounts()).unwrap()
-      toast({
+      showAlert({
+        type: 'success',
         title: "Refreshed",
         description: "Your accounts have been updated.",
       })
@@ -69,7 +73,8 @@ export function AccountsList() {
     if (accountToDelete) {
       try {
         await dispatch(deleteAccount(accountToDelete)).unwrap()
-        toast({
+        showAlert({
+          type: 'success',
           title: "Account deleted",
           description: "Your account has been successfully deleted.",
         })
@@ -110,15 +115,16 @@ export function AccountsList() {
             <EmptyAccounts onAddAccount={handleAddAccount} />
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {accounts.map((account) => (
-                <SwipeableItem
-                  key={account.id}
-                 
-                  className="h-full"
-                >
-                  <AccountCard account={account} onClick={() => handleViewDetails(account.id)} />
-                </SwipeableItem>
-              ))}
+              {accounts
+                .filter((account): account is BankAccount => account !== undefined && account !== null)
+                .map((account) => (
+                  <SwipeableItem
+                    key={account.id}
+                    className="h-full"
+                  >
+                    <AccountCard account={account} onClick={() => handleViewDetails(account.id)} />
+                  </SwipeableItem>
+                ))}
             </div>
           )}
         </div>
