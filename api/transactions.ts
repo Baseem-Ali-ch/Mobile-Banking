@@ -117,44 +117,23 @@ export const transactionsApi = {
   },
 
   approveTransaction: async (id: string): Promise<Transaction> => {
-    await delay(1000)
-    const index = mockTransactions.findIndex((tx) => tx.id === id)
-    if (index === -1) {
-      throw new Error("Transaction not found")
-    }
-
-    mockTransactions[index] = {
-      ...mockTransactions[index],
-      status: TransactionStatus.COMPLETED,
-      updatedAt: new Date().toISOString(),
-    }
-
-    return mockTransactions[index]
+    const response = await api.put(`/add-money/admin/${id}/approve`)
+    return response
   },
 
   rejectTransaction: async (id: string, reason: string): Promise<Transaction> => {
-    await delay(1000)
-    const index = mockTransactions.findIndex((tx) => tx.id === id)
-    if (index === -1) {
-      throw new Error("Transaction not found")
-    }
-
-    mockTransactions[index] = {
-      ...mockTransactions[index],
-      status: TransactionStatus.REJECTED,
-      rejectedReason: reason,
-      updatedAt: new Date().toISOString(),
-    }
-
-    return mockTransactions[index]
+    const response = await api.put(`/add-money/admin/${id}/reject`, { reason })
+    return response
   },
 
-  cancelTransaction: async (id: string): Promise<Transaction> => {
+  processTransaction: async (id: string, transactionId: string): Promise<Transaction> => {
+    const response = await api.put(`/add-money/admin/${id}/processing`, {transactionId})
+    return response
+  },
+
+  getTransactionHistory: async (filters?: any): Promise<Transaction[]> => {
     await delay(1000)
-    const index = mockTransactions.findIndex((tx) => tx.id === id)
-    if (index === -1) {
-      throw new Error("Transaction not found")
-    }
+    return mockTransactions
 
     // Only pending transactions can be cancelled
     if (mockTransactions[index].status !== TransactionStatus.PENDING) {

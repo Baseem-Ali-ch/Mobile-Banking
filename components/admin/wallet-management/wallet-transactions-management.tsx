@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useAppDispatch } from "@/store/hooks"
-import { updateTransactionStatus, addNotification } from "@/store/slices/walletSlice"
-import { AddMoneyResponse, updateTransactionStatus as apiUpdateTransactionStatus, getAddMoneyTransactions } from "@/api/wallet"
+import { addNotification } from "@/store/slices/walletSlice"
+import { updateTransactionStatus as apiUpdateTransactionStatus, getAddMoneyTransactions } from "@/api/wallet"
 import type { WalletTransaction } from "@/types"
 import { formatCurrency } from "@/lib/currency-utils"
 import { formatDistanceToNow } from "date-fns"
@@ -19,19 +19,23 @@ import { v4 as uuidv4 } from "uuid"
 import { Loader2, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react"
 import { TransactionTable } from "@/components/admin/transaction-management/transaction-table"
 import { useAlert } from "@/components/ui/alert-component"
+import { updateTransactionStatus } from "@/store/slices/transactionsSlice"
 
 export function WalletTransactionsManagement() {
   const dispatch = useAppDispatch()
-  const {showAlert} = useAlert()
+  const { showAlert } = useAlert()
   const [allTransactions, setAllTransactions] = useState<WalletTransaction[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [newStatus, setNewStatus] = useState<"PENDING" | "COMPLETED" | "REJECTED">("PENDING")
+  const [newStatus, setNewStatus] = useState<"PENDING" | "PROCESSING" | "COMPLETED" | "REJECTED">()
   const [adminNote, setAdminNote] = useState("")
   const [isUpdating, setIsUpdating] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const [transactionId, setTransactionId] = useState("")
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false)
+  const [isProcessingStatus, setIsProcessingStatus] = useState(false)
 
   // Group transactions by status and organize them in the specified order
   const groupedTransactions = {
@@ -79,9 +83,7 @@ export function WalletTransactionsManagement() {
     setIsLoading(true)
     try {
       const response = await getAddMoneyTransactions()
-      console.log('respns', response)
       const transactions = response.data.transactions
-      console.log('transaction', transactions)
       setAllTransactions(transactions)
     } catch (error) {
       toast({
@@ -98,59 +100,63 @@ export function WalletTransactionsManagement() {
     fetchAllTransactions()
   }, [])
 
-  const handleStatusChange = async () => {
-    if (!selectedTransaction) return
+  const handleTransactionIdSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!transactionId) return
 
-    setIsUpdating(true)
     try {
-      const result = await apiUpdateTransactionStatus(selectedTransaction.id, newStatus, adminNote)
-      console.log('result', result)
-      // Update the transaction in the local state
-      setAllTransactions((prev) => 
-        prev.map((tx) => 
-          tx.id === selectedTransaction.id 
-            ? { ...tx, status: newStatus, adminNote }
-            : tx
-        )
-      )
+      setIsTransactionModalOpen(false)
+      setIsDialogOpen(true)
+      setNewStatus("PROCESSING")
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to store transaction ID",
+      })
+    }
+  }
 
-      // Update the transaction in the Redux store
-      dispatch(
-        updateTransactionStatus({
-          transactionId: selectedTransaction.id,
-          status: newStatus,
-          adminNote,
-        }),
-      )
+  const handleProcessClick = () => {
+    setIsTransactionModalOpen(true)
+  }
 
-      // Add a notification for the user
-      const notificationMessage =
-        newStatus === "COMPLETED"
-          ? `Your send request of ${formatCurrency(selectedTransaction.amount, "USD")} has been approved.`
-          : `Your send request of ${formatCurrency(selectedTransaction.amount, "USD")} has been rejected.${adminNote ? ` Reason: ${adminNote}` : ""}`
+  const handleStatusChange = async () => {
+    if (!transactionId) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a transaction ID",
+      })
+      return
+    }
 
-      dispatch(
-        addNotification({
-          id: uuidv4(),
-          transactionId: selectedTransaction.id,
-          message: notificationMessage,
-          status: "unread",
-          createdAt: new Date().toISOString(),
-          type: newStatus === "COMPLETED" ? "success" : "error",
-        }),
-      )
-
+    try {
+      setIsUpdating(true)
+      const result = await dispatch(updateTransactionStatus({
+        id: selectedTransaction?.id,
+        transactionId,
+        status: newStatus as any,
+        adminNote: adminNote || ""
+      }))
+      
+      if (newStatus === "PROCESSING") {
+        setIsProcessingStatus(true)
+      }
+      
+      await fetchAllTransactions()
       showAlert({
         type: 'success',
-        title: "Status Updated",
-        description:`Transaction status has been updated to ${newStatus.toLowerCase()}.`,
+        title: "Success",
+        description: (result.payload as any)?.message || "Transaction status updated successfully",
       })
 
       setIsDialogOpen(false)
       setAdminNote("")
+      setTransactionId("")
     } catch (error) {
-      toast({
-        variant: "destructive",
+      showAlert({
+        type: "error",
         title: "Error",
         description: "Failed to update transaction status",
       })
@@ -171,39 +177,38 @@ export function WalletTransactionsManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Transaction Management</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            {groupedTransactions.PENDING.length} pending • {groupedTransactions.PROCESSING.length} processing • {groupedTransactions.REJECTED.length} rejected • {groupedTransactions.COMPLETED.length} completed
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={fetchAllTransactions} disabled={isLoading}>
-          {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
-          Refresh
-        </Button>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Money Transactions</CardTitle>
-          <CardDescription>Organized view: Pending → Processing → Rejected → Completed transactions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TransactionTable
-            transactions={organizedTransactions}
-            isLoading={isLoading}
-            onViewTransaction={(transaction) => {
-              setSelectedTransaction(transaction)
-              setIsDialogOpen(true)
-            }}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            showSectionHeaders={true}
-          />
-        </CardContent>
-      </Card>
+      <Dialog open={isTransactionModalOpen} onOpenChange={setIsTransactionModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Enter Transaction ID</DialogTitle>
+            <DialogDescription>
+              Please enter the transaction ID to update its status to Processing.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleTransactionIdSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="transactionId" className="text-center">
+                  Transaction ID
+                </Label>
+                <input
+                  id="transactionId"
+                  value={transactionId}
+                  placeholder="Enter transaction id"
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  className="col-span-3 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                />
+              </div>
+            </div>
+            <DialogDescription>
+              Follow this format: TXN_20240115_001
+            </DialogDescription>
+            <DialogFooter>
+              <Button type="submit">Submit</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
@@ -243,7 +248,12 @@ export function WalletTransactionsManagement() {
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={newStatus} onValueChange={(value) => setNewStatus(value as any)}>
+                <Select value={newStatus} onValueChange={(value) => {
+                  setNewStatus(value as any)
+                  if (value === "PROCESSING") {
+                    handleProcessClick()
+                  }
+                }}>
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -276,35 +286,71 @@ export function WalletTransactionsManagement() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="adminNote">Admin Note (Optional)</Label>
-                <Textarea
-                  id="adminNote"
-                  placeholder="Add a note about this decision"
-                  value={adminNote}
-                  onChange={(e) => setAdminNote(e.target.value)}
-                />
-              </div>
+              {newStatus === "REJECTED" && (
+                <div className="space-y-2">
+                  <Label htmlFor="adminNote">Reason for rejection</Label>
+                  <Textarea
+                    id="adminNote"
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    placeholder="Please provide a reason for rejecting this transaction..."
+                  />
+                </div>
+              )}
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleStatusChange} disabled={isUpdating}>
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating
+                    </>
+                  ) : (
+                    "Update Status"
+                  )}
+                </Button>
+              </DialogFooter>
             </div>
           )}
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleStatusChange} disabled={isUpdating}>
-              {isUpdating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Updating...
-                </>
-              ) : (
-                "Update Status"
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Transaction Management</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {groupedTransactions.PENDING.length} pending • {groupedTransactions.PROCESSING.length} processing • {groupedTransactions.REJECTED.length} rejected • {groupedTransactions.COMPLETED.length} completed
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={fetchAllTransactions} disabled={isLoading}>
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+          Refresh
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Money Transactions</CardTitle>
+          <CardDescription>Organized view: Pending → Processing → Rejected → Completed transactions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TransactionTable
+            transactions={organizedTransactions}
+            isLoading={isLoading}
+            onViewTransaction={(transaction) => {
+              setSelectedTransaction(transaction)
+              setIsDialogOpen(true)
+            }}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            showSectionHeaders={true}
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -183,19 +183,21 @@ export const pollTransactionStatus = createAsyncThunk(
 
 export const updateTransactionStatus = createAsyncThunk(
   "transactions/updateTransactionStatus",
-  async ({ id, status }: { id: string; status: TransactionStatus }, { rejectWithValue }) => {
+  async ({ id,transactionId, status, adminNote }: { id: string | undefined, transactionId: string; status: TransactionStatus, adminNote: string }, { rejectWithValue }) => {
     try {
+      console.log(id, transactionId, status, adminNote)
       // Call the appropriate API based on the status
       let response
       if (status === "COMPLETED") {
-        response = await transactionsApi.approveTransaction(id)
+        response = await transactionsApi.approveTransaction(id!)
       } else if (status === "REJECTED") {
-        response = await transactionsApi.rejectTransaction(id)
-      } else if (status === "PENDING") {
-        response = await transactionsApi.resetTransaction(id)
+        response = await transactionsApi.rejectTransaction(id!, adminNote)
+      } else if (status === "PROCESSING") {
+        response = await transactionsApi.processTransaction(id!, transactionId)
       } else {
         return rejectWithValue("Invalid status")
       }
+      console.log('resp', response)
       return response
     } catch (error) {
       return rejectWithValue(`Failed to update transaction status to ${status}`)
@@ -381,7 +383,7 @@ const transactionsSlice = createSlice({
       state.isLoading = true
       state.error = null
     })
-    builder.addCase(updateTransactionStatus.fulfilled, (state, action) => {
+    builder.addCase(updateTransactionStatus.fulfilled, (state, action, { dispatch }) => {
       state.isLoading = false
       // Update the transaction in the list
       const index = state.transactions.findIndex((tx) => tx.id === action.payload.id)
@@ -393,6 +395,11 @@ const transactionsSlice = createSlice({
         state.selectedTransaction = action.payload
       }
       state.filteredTransactions = applyFilters(state.transactions, state.filters)
+
+      // If transaction is completed and it's a deposit or withdrawal, update wallet balance
+      if (action.payload.status === "COMPLETED") {
+        dispatch({ type: 'updateWalletBalance', payload: action.payload.amount })
+      }
     })
     builder.addCase(updateTransactionStatus.rejected, (state, action) => {
       state.isLoading = false

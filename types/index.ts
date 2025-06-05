@@ -129,11 +129,8 @@ export enum TransactionCategory {
 export enum TransactionStatus {
   PENDING = "PENDING",
   PROCESSING = "PROCESSING",
-  APPROVED = "APPROVED",
   REJECTED = "REJECTED",
-  CANCELLED = "CANCELLED",
   COMPLETED = "COMPLETED",
-  FAILED = "FAILED",
 }
 
 export enum TransactionType {

@@ -170,7 +170,6 @@ const walletSlice = createSlice({
       })
       .addCase(depositToWallet.fulfilled, (state, action) => {
         state.isLoading = false
-        
         state.transactions.unshift(action.payload.transaction)
         state.pendingTransactions = state.pendingTransactions.filter((tx) => tx.id !== action.payload.transaction.id)
       })
@@ -185,7 +184,6 @@ const walletSlice = createSlice({
       })
       .addCase(sendFromWallet.fulfilled, (state, action) => {
         state.isLoading = false
-        // Don't update balance yet since the transaction is pending
         state.transactions.unshift(action.payload.transaction)
         state.pendingTransactions = state.pendingTransactions.filter((tx) => tx.id !== action.payload.transaction.id)
       })
@@ -193,6 +191,19 @@ const walletSlice = createSlice({
         state.isLoading = false
         state.error = action.payload as string
       })
+      .addMatcher(
+        (action) => action.type === 'transactions/updateTransactionStatus/fulfilled',
+        (state, action) => {
+          const transaction = action.payload
+          if (transaction.status === 'COMPLETED') {
+            if (state.wallet) {
+              state.wallet.balance = transaction.type === 'DEPOSIT' 
+                ? state.wallet.balance + transaction.amount
+                : state.wallet.balance - transaction.amount
+            }
+          }
+        }
+      )
   },
 })
 
