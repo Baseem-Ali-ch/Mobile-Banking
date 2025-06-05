@@ -128,6 +128,7 @@ export enum TransactionCategory {
 
 export enum TransactionStatus {
   PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
   CANCELLED = "CANCELLED",
@@ -221,20 +222,22 @@ export enum WalletStatus {
 }
 
 export interface WalletTransaction {
-  id: string
-  walletId: string
-  userId: string
-  amount: number
-  currency: string
-  type: WalletTransactionType
-  status: WalletTransactionStatus
-  description: string
-  paymentMethod?: PaymentMethod
-  reference?: string
-  fee?: number
-  date: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  userId: string;
+  amount: number;
+  currency: string;
+  description: string;
+  status: WalletTransactionStatus;
+  type: WalletTransactionType;
+  transactionId: string;
+  createdAt: string;
+  updatedAt: string;
+  user: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+  };
 }
 
 export enum WalletTransactionType {
@@ -247,6 +250,9 @@ export enum WalletTransactionType {
 
 export enum WalletTransactionStatus {
   PENDING = "PENDING",
+  PROCESSING = "PROCESSING",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED",
   COMPLETED = "COMPLETED",
   FAILED = "FAILED",
   CANCELLED = "CANCELLED",

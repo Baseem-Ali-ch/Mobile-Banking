@@ -181,10 +181,11 @@ export function AccountForm({ id }: AccountFormProps) {
   const handleDelete = async () => {
     if (isEditMode && selectedAccount) {
       try {
-        await dispatch(deleteAccount(selectedAccount.id)).unwrap();
-        toast({
+        const result = await dispatch(deleteAccount(id)).unwrap();
+        showAlert({
+          type: "success",
           title: "Account deleted",
-          description: "Your account has been successfully deleted.",
+          description: result.message || "Your account has been successfully deleted.",
         });
         router.push("/dashboard/accounts");
       } catch (error) {

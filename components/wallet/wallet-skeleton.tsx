@@ -13,12 +13,9 @@ export function WalletSkeleton() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="overview" disabled>
             Overview
-          </TabsTrigger>
-          <TabsTrigger value="history" disabled>
-            Transaction History
           </TabsTrigger>
         </TabsList>
         <TabsContent value="overview">

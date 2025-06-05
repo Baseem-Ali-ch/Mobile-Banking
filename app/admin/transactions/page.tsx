@@ -28,8 +28,9 @@ export default function TransactionsPage() {
   }, [dispatch])
 
   const pendingTransactions = filteredTransactions.filter((transaction) => transaction.status === "PENDING")
-
+  const processingTransactions = filteredTransactions.filter((transaction) => transaction.status === "PROCESSING")
   const rejectedTransactions = filteredTransactions.filter((transaction) => transaction.status === "REJECTED")
+  const completedTransactions = filteredTransactions.filter((transaction) => transaction.status === "COMPLETED")
 
   const handleViewTransaction = (transaction: Transaction) => {
     router.push(`/admin/transactions/${transaction.id}`)
@@ -80,7 +81,7 @@ export default function TransactionsPage() {
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="mb-4 grid w-full grid-cols-3">
+            <TabsList className="mb-4 grid w-full grid-cols-5">
               <TabsTrigger value="all">
                 All Transactions
                 <span className="ml-2 rounded-full bg-muted px-2 py-0.5 text-xs">{filteredTransactions.length}</span>
@@ -91,10 +92,22 @@ export default function TransactionsPage() {
                   {pendingTransactions.length}
                 </span>
               </TabsTrigger>
+              <TabsTrigger value="processing">
+                Processing
+                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800">
+                  {processingTransactions.length}
+                </span>
+              </TabsTrigger>
               <TabsTrigger value="rejected">
                 Rejected
                 <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800">
                   {rejectedTransactions.length}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="completed">
+                Completed
+                <span className="ml-2 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
+                  {completedTransactions.length}
                 </span>
               </TabsTrigger>
             </TabsList>
@@ -112,9 +125,23 @@ export default function TransactionsPage() {
                 onViewTransaction={handleViewTransaction}
               />
             </TabsContent>
+            <TabsContent value="processing">
+              <TransactionTable
+                transactions={processingTransactions}
+                isLoading={isLoading}
+                onViewTransaction={handleViewTransaction}
+              />
+            </TabsContent>
             <TabsContent value="rejected">
               <TransactionTable
                 transactions={rejectedTransactions}
+                isLoading={isLoading}
+                onViewTransaction={handleViewTransaction}
+              />
+            </TabsContent>
+            <TabsContent value="completed">
+              <TransactionTable
+                transactions={completedTransactions}
                 isLoading={isLoading}
                 onViewTransaction={handleViewTransaction}
               />

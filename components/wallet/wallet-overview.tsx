@@ -34,9 +34,9 @@ export function WalletOverview() {
   const thirtyDaysAgo = new Date()
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
-  const recentTransactions = transactions.filter((tx) => new Date(tx.date) >= thirtyDaysAgo)
+  const recentTransactions = transactions.filter((tx) => new Date(tx?.date) >= thirtyDaysAgo)
 
-  const totalDeposits = recentTransactions.filter((tx) => tx.type === "DEPOSIT").reduce((sum, tx) => sum + tx.amount, 0)
+  const totalDeposits = recentTransactions.filter((tx) => tx?.type === "DEPOSIT").reduce((sum, tx) => sum + tx.amount, 0)
 
   const totalWithdrawals = recentTransactions
     .filter((tx) => tx.type === "WITHDRAWAL")

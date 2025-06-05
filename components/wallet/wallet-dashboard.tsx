@@ -78,15 +78,11 @@ export function WalletDashboard() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="history">Transaction History</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
           <WalletOverview />
-        </TabsContent>
-        <TabsContent value="history">
-          <WalletTransactionHistory />
         </TabsContent>
       </Tabs>
     </div>

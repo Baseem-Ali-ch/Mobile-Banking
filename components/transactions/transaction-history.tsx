@@ -323,7 +323,7 @@ export function TransactionHistory() {
                             </div>
                             <div className="flex items-center justify-between mt-1">
                               <div className="flex items-center gap-2">
-                                <p className="text-xs text-muted-foreground">{formatDate(transaction.date || "")}</p>
+                                <p className="text-xs text-muted-foreground">{formatDate(transaction.createdAt || "")}</p>
                                 {getStatusBadge(transaction.status)}
                               </div>
                               <p className="text-xs text-muted-foreground truncate max-w-[120px]">

@@ -59,9 +59,9 @@ export const getWalletTransactions = createAsyncThunk(
 
 export const depositToWallet = createAsyncThunk(
   "wallet/depositToWallet",
-  async ({ amount, description }: { amount: number; description: string }, { rejectWithValue }) => {
+  async ({ amount, location, description }: { amount: number; location: string; description: string }, { rejectWithValue }) => {
     try {
-      const response = await addWalletBalance(amount, description)
+      const response = await addWalletBalance(amount, location, description)
       return response
     } catch (error) {
       return rejectWithValue((error as Error).message)
@@ -170,9 +170,7 @@ const walletSlice = createSlice({
       })
       .addCase(depositToWallet.fulfilled, (state, action) => {
         state.isLoading = false
-        if (state.wallet) {
-          state.wallet.balance = action.payload.newBalance
-        }
+        
         state.transactions.unshift(action.payload.transaction)
         state.pendingTransactions = state.pendingTransactions.filter((tx) => tx.id !== action.payload.transaction.id)
       })

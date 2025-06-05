@@ -58,6 +58,7 @@ const initialState: TransactionsState = {
 export const fetchTransactions = createAsyncThunk("transactions/fetchTransactions", async (_, { rejectWithValue }) => {
   try {
     const response = await transactionsApi.getTransactions()
+    console.log('response', response)
     return response
   } catch (error) {
     return rejectWithValue("Failed to fetch transactions")
@@ -269,8 +270,8 @@ const transactionsSlice = createSlice({
     })
     builder.addCase(fetchTransactions.fulfilled, (state, action) => {
       state.isLoading = false
-      state.transactions = action.payload
-      state.filteredTransactions = applyFilters(action.payload, state.filters)
+      state.transactions = action.payload.data.transactions
+      state.filteredTransactions = applyFilters(action.payload.data.transactions, state.filters)
     })
     builder.addCase(fetchTransactions.rejected, (state, action) => {
       state.isLoading = false

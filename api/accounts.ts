@@ -1,5 +1,5 @@
-import type { BankAccount, Transaction } from "@/types"
-import { api } from "./client"
+import type { BankAccount, Transaction } from "@/types";
+import { api } from "./client";
 
 // Mock data for demo purposes
 const mockAccounts: BankAccount[] = [
@@ -35,7 +35,7 @@ const mockAccounts: BankAccount[] = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
-]
+];
 
 // Mock transactions for demo purposes
 const mockTransactions: Record<string, Transaction[]> = {
@@ -113,94 +113,90 @@ const mockTransactions: Record<string, Transaction[]> = {
       updatedAt: new Date(Date.now() - 259200000).toISOString(),
     },
   ],
-}
+};
 
 interface AccountResponse {
-  status: 'success'
-  message: string
+  status: "success";
+  message: string;
   data: {
     accounts: {
-      id: string
-      accountHolderName: string
-      accountNumber: string
-      ifscCode: string
-      userId: string
-      isDefault?: boolean
-      createdAt: string
-      updatedAt: string
+      id: string;
+      accountHolderName: string;
+      accountNumber: string;
+      ifscCode: string;
+      userId: string;
+      isDefault?: boolean;
+      createdAt: string;
+      updatedAt: string;
       user: {
-        id: string
-        email: string
-        firstName: string
-        lastName: string
-      }
-    }
-  }
+        id: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+      };
+    };
+  };
 }
 
 export const accountsApi = {
-
   getAccounts: async (): Promise<AccountResponse> => {
-    const response = await api.get('/accounts')
-    return response
+    const response = await api.get("/accounts");
+    return response;
   },
 
   getAccount: async (id: string): Promise<AccountResponse> => {
-    const response = await api.get(`/accounts/${id}`)
-    return response
+    const response = await api.get(`/accounts/${id}`);
+    return response;
   },
 
-  addAccount: async (accountData: Partial<BankAccount>): Promise<AccountResponse> => {
-    const response = await api.post('/accounts', accountData)
-    return response
+  addAccount: async (
+    accountData: Partial<BankAccount>
+  ): Promise<AccountResponse> => {
+    const response = await api.post("/accounts", accountData);
+    return response;
   },
 
-  updateAccount: async (id: string, accountData: Partial<BankAccount>): Promise<BankAccount> => {
-    const response = await api.put(`/accounts/${id}`, accountData)
-    return response
+  updateAccount: async (
+    id: string,
+    accountData: Partial<BankAccount>
+  ): Promise<BankAccount> => {
+    const response = await api.put(`/accounts/${id}`, accountData);
+    return response;
   },
 
-  deleteAccount: async (id: string): Promise<void> => {
-    await delay(800)
-
-    const accountIndex = mockAccounts.findIndex((acc) => acc.id === id)
-    if (accountIndex === -1) {
-      throw new Error("Account not found")
-    }
-
-    // Remove account
-    mockAccounts.splice(accountIndex, 1)
-
-    // Remove transactions
-    delete mockTransactions[id]
+  deleteAccount: async (
+    id: string
+  ): Promise<{ status: string; message: string }> => {
+    const response = await api.delete(`/accounts/${id}`);
+    return response;
   },
 
   setDefaultAccount: async (id: string): Promise<BankAccount> => {
-    const response = await api.put(`/accounts/${id}`)
-    return response
+    const response = await api.put(`/accounts/${id}`);
+    return response;
   },
 
   getAccountBalance: async (id: string): Promise<{ balance: number }> => {
-    await delay(500)
+    await delay(500);
 
-    const account = mockAccounts.find((acc) => acc.id === id)
+    const account = mockAccounts.find((acc) => acc.id === id);
     if (!account) {
-      throw new Error("Account not found")
+      throw new Error("Account not found");
     }
 
-    return { balance: account.balance }
+    return { balance: account.balance };
   },
 
   getAccountTransactions: async (id: string): Promise<Transaction[]> => {
-    await delay(1000)
+    await delay(1000);
 
     // Check if account exists
-    const account = mockAccounts.find((acc) => acc.id === id)
+    const account = mockAccounts.find((acc) => acc.id === id);
     if (!account) {
-      throw new Error("Account not found")
+      throw new Error("Account not found");
     }
 
     // Return transactions for this account
-    return mockTransactions[id] || []
+    return mockTransactions[id] || [];
   },
-}
+};

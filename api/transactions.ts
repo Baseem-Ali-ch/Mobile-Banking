@@ -1,107 +1,18 @@
 import { type Transaction, TransactionStatus, TransactionType, TransactionCategory } from "@/types"
+import { api } from "./client"
 
-// Mock data for demo purposes
-const mockTransactions: Transaction[] = [
-  {
-    id: "TX123456789",
-    userId: "1",
-    fromAccountId: "1",
-    fromAccountName: "Primary Checking",
-    fromAccountNumber: "1234567890",
-    toAccountId: "external",
-    toAccountName: "John Smith",
-    toAccountNumber: "9876543210",
-    amount: 150.75,
-    currency: "USD",
-    description: "Rent payment",
-    category: TransactionCategory.PAYMENT,
-    status: TransactionStatus.COMPLETED,
-    type: TransactionType.PAYMENT,
-    date: new Date(Date.now() - 86400000).toISOString(), // Yesterday
-    createdAt: new Date(Date.now() - 86400000).toISOString(),
-    updatedAt: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "TX987654321",
-    userId: "1",
-    fromAccountId: "external",
-    fromAccountName: "Employer Inc.",
-    fromAccountNumber: "5555555555",
-    toAccountId: "1",
-    toAccountName: "Primary Checking",
-    toAccountNumber: "1234567890",
-    amount: 2500.0,
-    currency: "USD",
-    description: "Salary deposit",
-    category: TransactionCategory.DEPOSIT,
-    status: TransactionStatus.COMPLETED,
-    type: TransactionType.DEPOSIT,
-    date: new Date(Date.now() - 172800000).toISOString(), // 2 days ago
-    createdAt: new Date(Date.now() - 172800000).toISOString(),
-    updatedAt: new Date(Date.now() - 172800000).toISOString(),
-  },
-  {
-    id: "TX456789123",
-    userId: "1",
-    fromAccountId: "1",
-    fromAccountName: "Primary Checking",
-    fromAccountNumber: "1234567890",
-    toAccountId: "2",
-    toAccountName: "Savings Account",
-    toAccountNumber: "0987654321",
-    amount: 500.0,
-    currency: "USD",
-    description: "Monthly savings transfer",
-    category: TransactionCategory.TRANSFER,
-    status: TransactionStatus.COMPLETED,
-    type: TransactionType.TRANSFER,
-    date: new Date(Date.now() - 259200000).toISOString(), // 3 days ago
-    createdAt: new Date(Date.now() - 259200000).toISOString(),
-    updatedAt: new Date(Date.now() - 259200000).toISOString(),
-  },
-  {
-    id: "TX789123456",
-    userId: "1",
-    fromAccountId: "1",
-    fromAccountName: "Primary Checking",
-    fromAccountNumber: "1234567890",
-    toAccountId: "external",
-    toAccountName: "Netflix",
-    toAccountNumber: "1122334455",
-    amount: 14.99,
-    currency: "USD",
-    description: "Netflix subscription",
-    category: TransactionCategory.PAYMENT,
-    status: TransactionStatus.PENDING,
-    type: TransactionType.PAYMENT,
-    date: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: "TX321654987",
-    userId: "1",
-    fromAccountId: "1",
-    fromAccountName: "Primary Checking",
-    fromAccountNumber: "1234567890",
-    toAccountId: "external",
-    toAccountName: "Amazon",
-    toAccountNumber: "9988776655",
-    amount: 79.99,
-    currency: "USD",
-    description: "Online purchase",
-    category: TransactionCategory.PAYMENT,
-    status: TransactionStatus.REJECTED,
-    type: TransactionType.PAYMENT,
-    rejectedReason: "Insufficient funds in the account",
-    date: new Date(Date.now() - 345600000).toISOString(), // 4 days ago
-    createdAt: new Date(Date.now() - 345600000).toISOString(),
-    updatedAt: new Date(Date.now() - 345600000).toISOString(),
-  },
-]
-
-// Helper function to simulate API delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+export interface TransactionResponse {
+  success: boolean
+  data: {
+    transactions: Transaction[]
+    pagination: {
+      page: number
+      limit: number
+      total: number
+      totalPages: number
+    }
+  }
+}
 
 // Helper function to get account details
 const getAccountDetails = async (accountId: string) => {
@@ -122,17 +33,15 @@ const getAccountDetails = async (accountId: string) => {
 }
 
 export const transactionsApi = {
-  getTransactions: async (): Promise<Transaction[]> => {
-    await delay(1000)
-    return [...mockTransactions]
+  async getTransactions(): Promise<TransactionResponse> {
+    const response = await api.get('/transactions/admin/all-transactions')
+    console.log(response)
+    return response
   },
 
   getTransaction: async (id: string): Promise<Transaction> => {
-    await delay(800)
-    const transaction = mockTransactions.find((tx) => tx.id === id)
-    if (!transaction) {
-      throw new Error("Transaction not found")
-    }
+    const response = await api.get(`/transactions/${id}`)
+    return response.data
     return { ...transaction }
   },
 

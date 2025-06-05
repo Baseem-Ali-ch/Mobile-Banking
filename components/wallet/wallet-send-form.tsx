@@ -17,9 +17,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, AlertCircle } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 import { v4 as uuidv4 } from "uuid"
+import { useAlert } from "../ui/alert-component"
 
 export function WalletSendForm() {
   const router = useRouter()
+  const {showAlert} = useAlert()
   const dispatch = useAppDispatch()
   const { wallet, isLoading } = useAppSelector((state) => state.wallet)
   const { accounts } = useAppSelector((state) => state.accounts)
@@ -91,7 +93,7 @@ export function WalletSendForm() {
 
     try {
       // Process the send request
-      await dispatch(
+      const result = await dispatch(
         sendFromWallet({
           amount: Number(amount),
           bankAccountId,
@@ -100,20 +102,20 @@ export function WalletSendForm() {
       ).unwrap()
 
       // Show success message
-      toast({
+      showAlert({
+        type: "success",
         title: "Send Request Submitted",
-        description: `Your request to send ${formatCurrency(Number(amount), wallet?.currency || "USD")} to your bank account is pending approval.`,
-        variant: "default",
+        description: result.message ||`Your request to send ${formatCurrency(Number(amount), wallet?.currency || "USD")} to your bank account is pending approval.`,
       })
 
       // Redirect to wallet page
       router.push("/dashboard/wallet")
     } catch (error) {
       // Show error message
-      toast({
+      showAlert({
+        type: "error",
         title: "Send Request Failed",
         description: (error as Error).message || "An error occurred while processing your send request.",
-        variant: "destructive",
       })
     }
   }
@@ -166,19 +168,6 @@ export function WalletSendForm() {
                   />
                 </div>
                 {errors.amount && <p className="text-sm text-red-500">{errors.amount}</p>}
-
-                {amount && (
-                  <div className="text-sm text-muted-foreground mt-1">
-                    <div className="flex justify-between">
-                      <span>Transaction Fee (0.25%):</span>
-                      <span>{formatCurrency(fee, wallet?.currency || "USD")}</span>
-                    </div>
-                    <div className="flex justify-between font-medium">
-                      <span>Total Amount:</span>
-                      <span>{formatCurrency(totalAmount, wallet?.currency || "USD")}</span>
-                    </div>
-                  </div>
-                )}
 
                 {amount && !hasSufficientBalance && (
                   <div className="flex items-start mt-2 text-sm text-red-500">

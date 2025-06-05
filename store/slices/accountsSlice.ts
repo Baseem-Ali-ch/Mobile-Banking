@@ -75,10 +75,10 @@ export const updateAccount = createAsyncThunk(
 
 export const deleteAccount = createAsyncThunk("accounts/deleteAccount", async (id: string, { rejectWithValue }) => {
   try {
-    await accountsApi.deleteAccount(id)
-    return id
-  } catch (error) {
-    return rejectWithValue("Failed to delete account")
+    const response = await accountsApi.deleteAccount(id)
+    return response
+  } catch (error: any) {
+    return rejectWithValue(error.message || "Failed to delete account")
   }
 })
 

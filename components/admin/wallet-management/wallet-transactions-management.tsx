@@ -3,20 +3,12 @@
 import { useState, useEffect } from "react"
 import { useAppDispatch } from "@/store/hooks"
 import { updateTransactionStatus, addNotification } from "@/store/slices/walletSlice"
-import { getPendingSendTransactions, updateTransactionStatus as apiUpdateTransactionStatus } from "@/api/wallet"
+import { AddMoneyResponse, updateTransactionStatus as apiUpdateTransactionStatus, getAddMoneyTransactions } from "@/api/wallet"
 import type { WalletTransaction } from "@/types"
 import { formatCurrency } from "@/lib/currency-utils"
 import { formatDistanceToNow } from "date-fns"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -25,27 +17,77 @@ import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
 import { v4 as uuidv4 } from "uuid"
 import { Loader2, RefreshCw, CheckCircle, XCircle, Clock } from "lucide-react"
+import { TransactionTable } from "@/components/admin/transaction-management/transaction-table"
+import { useAlert } from "@/components/ui/alert-component"
 
 export function WalletTransactionsManagement() {
   const dispatch = useAppDispatch()
-  const [pendingTransactions, setPendingTransactions] = useState<WalletTransaction[]>([])
+  const {showAlert} = useAlert()
+  const [allTransactions, setAllTransactions] = useState<WalletTransaction[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<WalletTransaction | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [newStatus, setNewStatus] = useState<"PENDING" | "COMPLETED" | "REJECTED">("PENDING")
   const [adminNote, setAdminNote] = useState("")
   const [isUpdating, setIsUpdating] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
-  const fetchPendingTransactions = async () => {
+  // Group transactions by status and organize them in the specified order
+  const groupedTransactions = {
+    PENDING: allTransactions.filter(tx => tx.status === "PENDING"),
+    PROCESSING: allTransactions.filter(tx => tx.status === "PROCESSING"),
+    REJECTED: allTransactions.filter(tx => tx.status === "REJECTED"),
+    COMPLETED: allTransactions.filter(tx => tx.status === "COMPLETED")
+  }
+
+  // Create organized transaction list with section headers
+  const organizedTransactions = [
+    ...groupedTransactions.PENDING.map((tx, index) => ({
+      ...tx,
+      isFirstInSection: index === 0,
+      sectionTitle: "Pending Transactions",
+      sectionCount: groupedTransactions.PENDING.length,
+      statusColor: "blue"
+    })),
+    ...groupedTransactions.PROCESSING.map((tx, index) => ({
+      ...tx,
+      isFirstInSection: index === 0,
+      sectionTitle: "Processing Transactions",
+      sectionCount: groupedTransactions.PROCESSING.length,
+      statusColor: "yellow"
+    })),
+    ...groupedTransactions.REJECTED.map((tx, index) => ({
+      ...tx,
+      isFirstInSection: index === 0,
+      sectionTitle: "Rejected Transactions",
+      sectionCount: groupedTransactions.REJECTED.length,
+      statusColor: "red"
+    })),
+    ...groupedTransactions.COMPLETED.map((tx, index) => ({
+      ...tx,
+      isFirstInSection: index === 0,
+      sectionTitle: "Completed Transactions",
+      sectionCount: groupedTransactions.COMPLETED.length,
+      statusColor: "green"
+    }))
+  ]
+
+  const totalPages = Math.ceil(organizedTransactions.length / itemsPerPage)
+
+  const fetchAllTransactions = async () => {
     setIsLoading(true)
     try {
-      const transactions = await getPendingSendTransactions()
-      setPendingTransactions(transactions)
+      const response = await getAddMoneyTransactions()
+      console.log('respns', response)
+      const transactions = response.data.transactions
+      console.log('transaction', transactions)
+      setAllTransactions(transactions)
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to fetch pending transactions",
+        description: "Failed to fetch transactions",
       })
     } finally {
       setIsLoading(false)
@@ -53,7 +95,7 @@ export function WalletTransactionsManagement() {
   }
 
   useEffect(() => {
-    fetchPendingTransactions()
+    fetchAllTransactions()
   }, [])
 
   const handleStatusChange = async () => {
@@ -62,9 +104,15 @@ export function WalletTransactionsManagement() {
     setIsUpdating(true)
     try {
       const result = await apiUpdateTransactionStatus(selectedTransaction.id, newStatus, adminNote)
-
+      console.log('result', result)
       // Update the transaction in the local state
-      setPendingTransactions((prev) => prev.filter((tx) => tx.id !== selectedTransaction.id))
+      setAllTransactions((prev) => 
+        prev.map((tx) => 
+          tx.id === selectedTransaction.id 
+            ? { ...tx, status: newStatus, adminNote }
+            : tx
+        )
+      )
 
       // Update the transaction in the Redux store
       dispatch(
@@ -78,8 +126,8 @@ export function WalletTransactionsManagement() {
       // Add a notification for the user
       const notificationMessage =
         newStatus === "COMPLETED"
-          ? `Your send request of ${formatCurrency(selectedTransaction.amount, selectedTransaction.currency)} has been approved.`
-          : `Your send request of ${formatCurrency(selectedTransaction.amount, selectedTransaction.currency)} has been rejected.${adminNote ? ` Reason: ${adminNote}` : ""}`
+          ? `Your send request of ${formatCurrency(selectedTransaction.amount, "USD")} has been approved.`
+          : `Your send request of ${formatCurrency(selectedTransaction.amount, "USD")} has been rejected.${adminNote ? ` Reason: ${adminNote}` : ""}`
 
       dispatch(
         addNotification({
@@ -92,9 +140,10 @@ export function WalletTransactionsManagement() {
         }),
       )
 
-      toast({
+      showAlert({
+        type: 'success',
         title: "Status Updated",
-        description: `Transaction status has been updated to ${newStatus.toLowerCase()}.`,
+        description:`Transaction status has been updated to ${newStatus.toLowerCase()}.`,
       })
 
       setIsDialogOpen(false)
@@ -112,15 +161,24 @@ export function WalletTransactionsManagement() {
 
   const openStatusDialog = (transaction: WalletTransaction) => {
     setSelectedTransaction(transaction)
-    setNewStatus(transaction.status)
+    setNewStatus(transaction.status as any)
     setIsDialogOpen(true)
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
   }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Pending Send Requests</h2>
-        <Button variant="outline" size="sm" onClick={fetchPendingTransactions} disabled={isLoading}>
+        <div>
+          <h2 className="text-2xl font-bold">Transaction Management</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {groupedTransactions.PENDING.length} pending • {groupedTransactions.PROCESSING.length} processing • {groupedTransactions.REJECTED.length} rejected • {groupedTransactions.COMPLETED.length} completed
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={fetchAllTransactions} disabled={isLoading}>
           {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           Refresh
         </Button>
@@ -128,69 +186,32 @@ export function WalletTransactionsManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Send Requests Awaiting Approval</CardTitle>
-          <CardDescription>Review and manage pending send requests from users</CardDescription>
+          <CardTitle>Add Money Transactions</CardTitle>
+          <CardDescription>Organized view: Pending → Processing → Rejected → Completed transactions</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : pendingTransactions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No pending send requests found.</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Bank Account</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">{transaction.reference}</TableCell>
-                    <TableCell>{transaction.userId}</TableCell>
-                    <TableCell>{formatCurrency(transaction.amount, transaction.currency)}</TableCell>
-                    <TableCell>{transaction.bankAccountId}</TableCell>
-                    <TableCell>{formatDistanceToNow(new Date(transaction.date), { addSuffix: true })}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Pending
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="outline" size="sm" onClick={() => openStatusDialog(transaction)}>
-                        Update Status
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <TransactionTable
+            transactions={organizedTransactions}
+            isLoading={isLoading}
+            onViewTransaction={(transaction) => {
+              setSelectedTransaction(transaction)
+              setIsDialogOpen(true)
+            }}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            showSectionHeaders={true}
+          />
         </CardContent>
-        <CardFooter className="border-t pt-4 text-sm text-muted-foreground">
-          <p>
-            Approved send requests will be processed and funds will be deducted from the user's wallet. Rejected
-            requests will be cancelled.
-          </p>
-        </CardFooter>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Update Transaction Status</DialogTitle>
-            <DialogDescription>Change the status of this send request and provide an optional note.</DialogDescription>
+            <DialogDescription>
+              Update the status of this transaction. Please provide a reason if rejecting.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedTransaction && (
@@ -198,12 +219,12 @@ export function WalletTransactionsManagement() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Reference</p>
-                  <p className="font-medium">{selectedTransaction.reference}</p>
+                  <p className="font-medium">{selectedTransaction.transactionId}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Amount</p>
                   <p className="font-medium">
-                    {formatCurrency(selectedTransaction.amount, selectedTransaction.currency)}
+                    {formatCurrency(selectedTransaction.amount, "USD")}
                   </p>
                 </div>
                 <div>
@@ -212,7 +233,7 @@ export function WalletTransactionsManagement() {
                 </div>
                 <div>
                   <p className="text-muted-foreground">Date</p>
-                  <p className="font-medium">{new Date(selectedTransaction.date).toLocaleString()}</p>
+                  <p className="font-medium">{new Date(selectedTransaction.createdAt).toLocaleString()}</p>
                 </div>
                 <div className="col-span-2">
                   <p className="text-muted-foreground">Description</p>
@@ -231,6 +252,12 @@ export function WalletTransactionsManagement() {
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2 text-yellow-500" />
                         Pending
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="PROCESSING">
+                      <div className="flex items-center">
+                        <Clock className="h-4 w-4 mr-2 text-yellow-500" />
+                        Processing
                       </div>
                     </SelectItem>
                     <SelectItem value="COMPLETED">

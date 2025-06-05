@@ -12,9 +12,19 @@ interface TransactionTableProps {
   transactions: Transaction[]
   isLoading: boolean
   onViewTransaction: (transaction: Transaction) => void
+  currentPage?: number
+  totalPages?: number
+  onPageChange?: (page: number) => void
 }
 
-export function TransactionTable({ transactions, isLoading, onViewTransaction }: TransactionTableProps) {
+export function TransactionTable({ 
+  transactions, 
+  isLoading, 
+  onViewTransaction,
+  currentPage = 1,
+  totalPages = Math.ceil(transactions.length / 10),
+  onPageChange
+}: TransactionTableProps) {
   const [sortField, setSortField] = useState<keyof Transaction>("date")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
@@ -63,6 +73,10 @@ export function TransactionTable({ transactions, isLoading, onViewTransaction }:
     return sortDirection === "asc" ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />
   }
 
+  const startIndex = (currentPage - 1) * 10
+  const endIndex = startIndex + 10
+  const paginatedTransactions = sortedTransactions.slice(startIndex, endIndex)
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -107,10 +121,10 @@ export function TransactionTable({ transactions, isLoading, onViewTransaction }:
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedTransactions.map((transaction) => (
+          {paginatedTransactions.map((transaction) => (
             <TableRow key={transaction.id}>
               <TableCell className="font-medium">{transaction.id.slice(0, 8)}</TableCell>
-              <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
+              <TableCell>{new Date(transaction.createdAt).toLocaleDateString()}</TableCell>
               <TableCell className="max-w-[200px] truncate">{transaction.description}</TableCell>
               <TableCell>{formatCurrency(transaction.amount)}</TableCell>
               <TableCell>{getStatusBadge(transaction.status)}</TableCell>
@@ -124,6 +138,54 @@ export function TransactionTable({ transactions, isLoading, onViewTransaction }:
           ))}
         </TableBody>
       </Table>
+
+      {/* Responsive pagination */}
+      <div className="flex flex-col gap-3 py-4">
+        {/* Results count - always visible */}
+        <div className="flex justify-center sm:justify-start">
+          <p className="text-sm text-muted-foreground text-center sm:text-left">
+            Showing {paginatedTransactions.length} of {transactions.length} transactions
+          </p>
+        </div>
+
+        {/* Pagination controls */}
+        <div className="flex flex-col xs:flex-row items-center justify-center sm:justify-end gap-3">
+          {/* Page info - hidden on very small screens, shown on xs and up */}
+          <span className="hidden xs:block text-sm order-2 xs:order-1">
+            Page {currentPage} of {totalPages}
+          </span>
+
+          {/* Navigation buttons */}
+          <div className="flex items-center gap-2 order-1 xs:order-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange?.(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="min-w-[80px]"
+            >
+              <span className="hidden xs:inline">Previous</span>
+              <span className="xs:hidden">Prev</span>
+            </Button>
+
+            {/* Page info for very small screens */}
+            <span className="xs:hidden text-sm px-2 py-1 bg-muted rounded text-center min-w-[60px]">
+              {currentPage}/{totalPages}
+            </span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange?.(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className="min-w-[80px]"
+            >
+              <span className="hidden xs:inline">Next</span>
+              <span className="xs:hidden">Next</span>
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
